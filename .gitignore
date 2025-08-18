@@ -1,0 +1,14 @@
+/.idea
+/.idea/*
+/.trae
+/.trae/*
+*.exe
+/bin
+/bin/*
+
+# JWT Keys - Never commit private keys!
+/keys
+/keys/*
+*.pem
+jwt-private.pem
+jwt-public.pem
