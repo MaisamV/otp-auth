@@ -1,0 +1,134 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+README*
+CHANGELOG*
+LICENSE*
+docs/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Test files
+*_test.go
+testdata/
+test/
+tests/
+
+# Build artifacts
+build/
+dist/
+bin/
+
+# Dependency directories
+vendor/
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker files (avoid recursive copying)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Scripts that shouldn't be in container
+scripts/deploy.sh
+scripts/build.sh
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+
+# Archive files
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# Go specific
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Air (live reload) files
+.air.toml
+tmp/
+
+# Makefile
+Makefile
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Kubernetes files
+k8s/
+*.yaml
+*.yml
+!configs/*.yaml
+!configs/*.yml
+!openapi/openapi.yaml
+
+# Terraform files
+*.tf
+*.tfstate
+*.tfvars
+
+# Monitoring configs (these will be mounted as volumes)
+configs/prometheus.yml
+configs/grafana/
+configs/nginx.conf
+configs/redis.conf

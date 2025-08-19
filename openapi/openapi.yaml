@@ -1,0 +1,602 @@
+openapi: 3.0.3
+info:
+  title: OTP Authentication Service API
+  description: |
+    A secure OTP-based authentication service built with Go and Gin framework.
+    
+    This API provides endpoints for:
+    - OTP generation and verification
+    - User authentication and authorization
+    - JWT token management
+    - User profile management
+    - Administrative user management
+    
+    ## Authentication
+    Most endpoints require authentication using Bearer tokens. Admin endpoints require additional admin privileges.
+    
+    ## Rate Limiting
+    - OTP sending: {otp_limit} requests per {otp_window} per phone number
+    - Login attempts: {login_limit} requests per {login_window} per phone number
+    - Token refresh: {refresh_limit} requests per {refresh_window} per IP
+    - General API: {general_limit} requests per {general_window} per IP
+  version: 1.0.0
+  contact:
+    name: OTP Auth Service
+    email: support@otpauth.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.otpauth.com
+    description: Production server
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health Check
+      description: Check the health status of the service
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /live:
+    get:
+      tags:
+        - Health
+      summary: Liveness Check
+      description: Check if the service is alive
+      operationId: livenessCheck
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness Check
+      description: Check if the service is ready to serve requests
+      operationId: readinessCheck
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/v1/auth/send-otp:
+    post:
+      tags:
+        - Authentication
+      summary: Send OTP
+      description: Send OTP to phone number for authentication. Session ID will be set in cookies.
+      operationId: sendOTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendOTPRequest'
+      responses:
+        '200':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendOTPResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login/Register
+      description: Login or register user with OTP verification. Session ID will be read from cookies.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid OTP or credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Not implemented yet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login endpoint not implemented yet"
+
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh Token
+      description: Refresh access token using refresh token (tokens read from cookies)
+      operationId: refreshToken
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Not implemented yet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Refresh token endpoint not implemented yet"
+
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout
+      description: Logout user and invalidate refresh token (tokens read from cookies)
+      operationId: logout
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Not implemented yet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logout endpoint not implemented yet"
+
+  /api/v1/users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get User Profile
+      description: Get current user profile
+      operationId: getUserProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUserResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Not implemented yet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Get profile endpoint not implemented yet"
+
+  /api/v1/users:
+    get:
+      tags:
+        - Users
+      summary: Get Users
+      description: Get list of users with pagination (admin only)
+      operationId: getUsers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Items per page
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: search_phone
+          in: query
+          description: Search by phone number
+          required: false
+          schema:
+            type: string
+            example: "+989123456789"
+        - name: date_from
+          in: query
+          description: Filter from date (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2024-01-01"
+        - name: date_to
+          in: query
+          description: Filter to date (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2024-12-31"
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUsersResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Not implemented yet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Get users endpoint not implemented yet"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  schemas:
+    # Request Schemas
+    SendOTPRequest:
+      type: object
+      required:
+        - phone_number
+      properties:
+        phone_number:
+          type: string
+          description: Phone number in international format
+          example: "+989123456789"
+          pattern: '^\+[1-9]\d{1,14}$'
+
+    LoginRequest:
+      type: object
+      required:
+        - phone_number
+        - otp
+      properties:
+        phone_number:
+          type: string
+          description: Phone number in international format
+          example: "+989123456789"
+          pattern: '^\+[1-9]\d{1,14}$'
+        otp:
+          type: string
+          description: 6-digit OTP code
+          example: "123456"
+          pattern: '^\d{6}$'
+
+    UpdateUserScopeRequest:
+      type: object
+      required:
+        - scope
+      properties:
+        scope:
+          type: string
+          description: User scope/role
+          example: "superadmin"
+          enum: ["user", "admin", "superadmin"]
+
+    # Response Schemas
+    SendOTPResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "OTP sent successfully"
+        session_id:
+          type: string
+          example: "abc123def456"
+
+    LoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Login successful"
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expires_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+        user:
+          $ref: '#/components/schemas/UserInfo'
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Token refreshed successfully"
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expires_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+
+    LogoutResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Logout successful"
+
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        phone_number:
+          type: string
+          example: "+989123456789"
+        scope:
+          type: string
+          example: "superadmin"
+          enum: ["user", "admin", "superadmin"]
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+
+    GetUserResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserInfo'
+
+    GetUsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserInfo'
+        total:
+          type: integer
+          format: int64
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        total_pages:
+          type: integer
+          example: 10
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+          enum: ["healthy", "unhealthy", "ready", "not_ready"]
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+        uptime:
+          type: string
+          example: "1h30m45s"
+        version:
+          type: string
+          example: "1.0.0"
+        services:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            database: "ready"
+            redis: "ready"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Invalid phone number format"
+        code:
+          type: string
+          example: "INVALID_PHONE"
+        details:
+          type: string
+          example: "Phone number must start with + or 0"
+
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Operation completed successfully"
+        data:
+          type: object
+          description: Optional additional data
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Authentication
+    description: Authentication and authorization endpoints
+  - name: Users
+    description: User management endpoints
+  - name: Admin
+    description: Administrative endpoints requiring admin privileges
