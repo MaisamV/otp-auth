@@ -1,8 +1,12 @@
 # OTP Authentication Service
 
+## Project Summary
+
 A robust, production-ready OTP (One-Time Password) authentication service built with Go, following clean architecture principles. This service provides secure phone number-based authentication using JWT tokens and Redis for OTP storage.
 
-## Features
+The system implements a complete authentication flow with phone number validation, OTP generation and verification, JWT token management, and user session handling. Built with Clean Architecture, it ensures maintainability, testability, and scalability.
+
+### Key Features
 
 - 📱 **Phone Number Authentication**: Secure OTP-based authentication
 - 🔐 **JWT Tokens**: ECDSA-signed access and refresh tokens
@@ -15,42 +19,13 @@ A robust, production-ready OTP (One-Time Password) authentication service built 
 - 🛡️ **CORS Support**: Configurable cross-origin resource sharing
 - 📝 **Comprehensive Logging**: Structured logging with configurable levels
 
-## Architecture
-
-This project follows **Clean Architecture** principles with the following layers:
-
-```
-├── cmd/                    # Application entry points
-├── internal/
-│   ├── domain/            # Business logic and entities
-│   │   ├── entities/      # Domain entities
-│   │   ├── repositories/  # Repository interfaces
-│   │   ├── services/      # Service interfaces
-│   │   └── valueobjects/  # Value objects
-│   ├── application/       # Application layer
-│   │   ├── dto/          # Data transfer objects
-│   │   ├── ports/        # Ports (interfaces)
-│   │   └── usecases/     # Use cases
-│   ├── infrastructure/    # Infrastructure layer
-│   │   ├── http/         # HTTP handlers, middleware, routing
-│   │   ├── persistence/  # Database implementations
-│   │   └── services/     # Service implementations
-│   └── config/           # Configuration management
-├── pkg/                   # Shared utilities
-├── configs/              # Configuration files
-└── scripts/              # Deployment and utility scripts
-```
-
 ## Quick Start
 
 ### Prerequisites
 
-- Go 1.21+
 - Docker and Docker Compose
-- PostgreSQL 15+
-- Redis 7+
 
-### Using Docker Compose (Recommended)
+## How to run with Docker compose
 
 1. **Clone the repository**:
    ```bash
@@ -58,42 +33,90 @@ This project follows **Clean Architecture** principles with the following layers
    cd otp-auth
    ```
 
-2. **Start the services**:
+2. **Start all services** (PostgreSQL, Redis, and OTP Auth Service):
    ```bash
-   docker-compose up -d
+   docker-compose up --build -d
    ```
 
-3. **Check service health**:
+3. **Verify services are running**:
+   ```bash
+   docker-compose ps
+   ```
+
+4. **Check service health**:
    ```bash
    curl http://localhost:8080/health
    ```
 
-### Manual Setup
+5. **View logs** (optional):
+   ```bash
+   docker-compose logs -f otp-auth-service
+   ```
 
-1. **Install dependencies**:
+6. **Open the swagger to test the service**:
+   http://localhost:8080/swagger/index.html
+
+## How to run locally
+
+### Prerequisites
+- Go 1.21+
+- PostgreSQL 15+
+- Redis 7+
+
+### Setup Steps
+
+1. **Install Go dependencies**:
    ```bash
    go mod download
    ```
 
-2. **Set up PostgreSQL and Redis**:
+2. **Set up PostgreSQL database**:
    ```bash
-   # PostgreSQL
+   # Create database
    createdb otp_auth
    
-   # Redis (default configuration)
+   # Or using psql
+   psql -c "CREATE DATABASE otp_auth;"
+   ```
+
+3. **Start Redis server**:
+   ```bash
+   # Using default configuration
    redis-server
+   
+   # Or with custom config
+   redis-server /path/to/redis.conf
    ```
 
-3. **Configure environment**:
+4. **Configure application**:
    ```bash
+   # Copy and edit configuration
    cp configs/config.yaml configs/config.local.yaml
-   # Edit configs/config.local.yaml with your settings
+   # Edit configs/config.local.yaml with your database and Redis settings
    ```
 
-4. **Run the application**:
+5. **Run database migrations** (automatic on startup):
    ```bash
-   go run cmd/server/main.go
+   # Migrations will run automatically when starting the application
    ```
+
+6. **Start the application**:
+   ```bash
+   # Development mode
+   go run cmd/server/main.go
+   
+   # Or build and run
+   go build -o bin/otp-auth cmd/server/main.go
+   ./bin/otp-auth
+   ```
+
+7. **Verify the application is running**:
+   ```bash
+   curl http://localhost:8080/health
+   ```
+
+8. **Open the swagger to test the service**:
+   http://localhost:8080/swagger/index.html
 
 ## API Endpoints
 
@@ -116,86 +139,6 @@ This project follows **Clean Architecture** principles with the following layers
 - `GET /ready` - Readiness check
 - `GET /live` - Liveness check
 
-## Configuration
-
-The service uses YAML configuration files with environment variable overrides:
-
-```yaml
-server:
-  host: "0.0.0.0"
-  port: 8080
-  mode: "debug" # debug, release, test
-
-database:
-  host: "localhost"
-  port: 5432
-  user: "postgres"
-  password: "postgres"
-  dbname: "otp_auth"
-  sslmode: "disable"
-
-redis:
-  addr: "localhost:6379"
-  password: ""
-  db: 0
-
-jwt:
-  access_token_ttl: "15m"
-  refresh_token_ttl: "168h" # 7 days
-  issuer: "otp-auth-service"
-
-otp:
-  length: 6
-  ttl: "5m"
-  sender_type: "console" # console, sms
-
-security:
-  rate_limit:
-    enabled: true
-    requests: 100
-    window: "1m"
-    otp_limit: 5
-    otp_window: "1h"
-```
-
-### Environment Variables
-
-All configuration can be overridden using environment variables with the `OTP_AUTH_` prefix:
-
-```bash
-export OTP_AUTH_DATABASE_HOST=localhost
-export OTP_AUTH_DATABASE_PASSWORD=secret
-export OTP_AUTH_REDIS_ADDR=redis:6379
-```
-
-## Usage Examples
-
-### Send OTP
-
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/send-otp \
-  -H "Content-Type: application/json" \
-  -d '{"phone_number": "+989123456789"}'
-```
-
-### Login with OTP
-
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "phone_number": "+989123456789",
-    "otp_code": "123456",
-    "session_id": "session-uuid"
-  }'
-```
-
-### Access Protected Endpoint
-
-```bash
-curl -X GET http://localhost:8080/api/v1/users/profile \
-  -H "Authorization: Bearer <access_token>"
-```
 
 ## Development
 
